@@ -1,0 +1,285 @@
+Base prompt:-  Master Foundational Prompt
+Markdown
+### TASK OVERVIEW
+You are an expert full-stack AI engineer tasked with building an **AI Job Application Assistant with Application Tracker**. 
+
+You will construct a four-tab, client-side web application driven by an LLM orchestration layer and local JSON state persistence. The system automates candidate profile setup, job description (JD) skill matching, tailored PDF resume generation, multi-stage application tracking, per-rejection AI feedback learning, and cross-rejection SWOT analysis.
+
+---
+
+### DESIGN SYSTEM & BRAND STYLING
+Apply the following exact design palette across all UI components and views:
+
+```css
+:root {
+  /* Typography & Text */
+  --color-heading-primary: #9E5868; /* Muted Berry/Rose */
+  --color-card-title: #3A4B56;       /* Dark Slate Gray */
+  --color-body-text: #6C7880;        /* Muted Slate/Cool Gray */
+
+  /* UI Components & Cards */
+  --color-card-bg: #FFFFFF;          /* Pure White */
+  --color-card-border: #E08C9D;      /* Dusty Pink */
+  --color-panel-bg: #FFFFFF;         /* White */
+  --gradient-panel-tint: linear-gradient(135deg, #FCD6D2 0%, #FAD5C0 100%); /* Soft Peach/Coral */
+
+  /* Visual Accents & Right-Side Graphic Engine */
+  --color-graphic-grid: #E61B8A;     /* Vibrant Neon Pink */
+  --color-graphic-accent: #C4D152;   /* Lime Green/Yellow */
+  --color-graphic-dark-base: #17040F;/* Near Black/Dark Plum */
+  --color-graphic-node: #FFFFFF;     /* Bright White */
+}
+ARCHITECTURE & DATA LAYER
+1. Single Local Data Store
+All application state MUST reside in a single local JSON file (e.g., app_data.json). 
+No external database is permitted. 
+JSON State Schema:
+JSON
+{
+  "is_onboarded": false,
+  "current_profile_state": {},
+  "profile_update_history": [],
+  "applications": [],
+  "global_analysis": {}
+}
+Clear All Data Action: Include a persistent "Clear All Data" control in the global header. On double-confirmation, completely wipe the JSON file and reset all views to their initial empty states. 
+2. Living Profile Core Engine
+The system maintains an evolving candidate profile object (current_profile_state). 
+The original document upload populates the baseline schema. 
+Crucial Rule: Subsequent rejection analyses dynamically downgrade, refine, or update current_profile_state. All new JD match assessments and PDF resume generations in Tab 1 MUST consume this evolving state—not the static raw upload. 
+FUNCTIONAL TAB SPECIFICATIONS
+View 0: First-Run Onboarding Flow
+Triggered if is_onboarded is false or data is cleared. 
+Inputs: Mandatory Candidate Profile (.txt, .pdf, .docx) and Optional Reference Resume (.pdf, .docx). 
+Parse unstructured upload into the target JSON structure (Name, Credentials, Summary, Skills, Projects, Work Experience, Extracurriculars, Achievements, Education).
+Render an interactive UI editor allowing granular Add [+], Edit, and Remove [-] actions on every node before committing to current_profile_state.
+Tab 1: Apply (Resume Prep & Submission Simulation)
+Inputs: Paste Job Description (JD), extract Company Name, Role, Required Skills, Profile Skills, and calculate Skill Match % beyond basic keyword lookup (factoring in semantic relevance and experience context). 
+Prepare Resume Button Activation: Disabled until candidate profile loaded, JD pasted, company name set, role set, skills extracted, and match % calculated. 
+Resume Generation: Use Python ReportLab to produce a downloadable PDF. Mirror style/layout from the reference resume if provided. Adjust skill emphasis according to current_profile_state without exposing system flags or diagnostic terms. 
+Submitted Button: Unlocks only after PDF download. Clicking logs the job application into Tab 2 with status Submitted (displaying a green blinking status indicator). 
+Tab 2: Tracking (Application Tracker Table)
+Display active applications: Company, Role, Skills, Match %, Viewable JD, Status, Action Buttons. 
+Status Flow: Submitted  Interview  Selected OR Not Selected. 
+Confirmation modal required if jumping directly to Selected without Interview. 
+Direct Not Selected transitions prompt confirmation before removing the entry from Tab 2 and moving it to Tab 3. 
+Tab 3: Not Selected (Rejection Analysis & Profile Learning)
+Display rejected rows with a free-text Rejection Notes box (interview details, missed questions, rejection email content). 
+Analyze Button: Trigger an LLM analysis evaluating skill gaps against the JD and notes. Automatically update current_profile_state in the JSON store and append to profile_update_history. 
+Tab 4: Global Analysis (Cross-Rejection SWOT Report)
+Aggregate data across all rejection rows in Tab 3. 
+Require a minimum of 2 rejections to run; otherwise render a friendly empty state view. 
+Generate a structured SWOT Analysis (Strengths, Weaknesses, Opportunities, Threats) paired with a warm, encouraging executive summary and 3 prioritized action items. 
+ACCEPTANCE CRITERIA
+The app executes smoothly across all 4 tabs and onboarding screens[cite: 1].
+Styling strictly follows the specified color hierarchy and visual system.
+Profile updates from Tab 3 rejections seamlessly propagate to subsequent Tab 1 match evaluations and ReportLab resume generations[cite: 1].
+Application state updates cleanly inside local JSON storage without data loss[cite: 1].
+
+
+Follow up Prompt 1:-
+Refined Prompt
+Markdown
+### TASK OVERVIEW
+You are an expert AI engineer building the initial onboarding and candidate profile setup flow for an AI Job Application Assistant. 
+
+Implement a structured, multi-step profile onboarding interface with an LLM-powered document extraction pipeline that converts unstructured resume/profile uploads into an editable, schema-aligned candidate state saved to a local JSON file.
+
+---
+
+### FUNCTIONAL REQUIREMENTS & SYSTEM FLOW
+
+#### 1. First-Run Onboarding Interface
+* **View Logic:** If no local candidate profile JSON exists (or if data is cleared), display **only** the Onboarding Page (block access to Tab 1 JD entry, Tab 2, Tab 3, and Tab 4 until setup is completed).
+* **File Upload Inputs:**
+  1. **Candidate Profile Upload (Mandatory):** Supports `.txt`, `.pdf`, `.docx`.
+  2. **Reference Resume Upload (Optional):** Supports `.pdf`, `.docx` (used for style/formatting inspiration in ReportLab generation later).
+
+#### 2. LLM Information Extraction & Data Schema
+* Extract raw text from the uploaded profile and execute an LLM call using strict JSON schema output parsing.
+* The extracted candidate profile MUST adhere to the following schema structure:
+
+```json
+{
+  "name": "string",
+  "credentials": {
+    "email": "string",
+    "phone": "string",
+    "location": "string",
+    "links": ["string"]
+  },
+  "profile_summary": "string",
+  "skills": {
+    "languages": ["string"],
+    "frameworks": ["string"],
+    "tools_and_technologies": ["string"],
+    "domain_knowledge": ["string"]
+  },
+  "projects": [
+    {
+      "title": "string",
+      "description": "string",
+      "tech_used": ["string"],
+      "source_code_link": "string",
+      "production_link": "string",
+      "dates": "string"
+    }
+  ],
+  "work_experience": [
+    {
+      "company": "string",
+      "role": "string",
+      "dates": "string",
+      "project": "string",
+      "description": "string"
+    }
+  ],
+  "extra_curriculars": [
+    {
+      "title": "string",
+      "dates": "string",
+      "description": "string"
+    }
+  ],
+  "achievements": [
+    {
+      "title": "string",
+      "dates": "string",
+      "description": "string"
+    }
+  ],
+  "education": [
+    {
+      "college": "string",
+      "degree": "string",
+      "cgpa": "string",
+      "dates": "string"
+    }
+  ]
+}
+3. Dynamic Profile Preview & Interactive Editing
+State Visualization: Render the parsed JSON into an interactive, human-readable profile editor form.
+Granular UI Controls: Every array item and key-value pair across all sections (Skills, Projects, Work Experience, Education, etc.) must include:
+Edit Fields: Editable text boxes/tags for fine-tuning values.
+Remove Button ([-]): Instantly deletes the specific item or skill entry from state.
+Add Button ([+]): Appends a new item field into that specific category section.
+Save & Initialize Action: A prominent "Save Profile & Proceed" button that:
+Writes the final edited profile to the local JSON file (current_profile_state). 
+Sets the is_onboarded flag to true.
+Transitions the UI to the primary Tab 1: Apply Page (where the Job Description input box is unblocked)[cite: 1].
+TECHNICAL & RUBRIC REQUIREMENTS
+JSON Schema Enforcement: System prompt instructions for the LLM must force zero conversational preamble and strict JSON validation to avoid extraction failures. 
+Local Persistence: All updates made via the granular Add/Remove buttons must immediately sync with the app's internal JSON data store[cite: 1].
+Living Profile Contract: Ensure the extracted object is saved as current_profile_state inside the main application JSON file to support future AI dynamic downgrades/updates after rejection analysis[cite: 1].
+ACCEPTANCE CRITERIA
+First-time launch loads only the Profile Creation and Reference Upload page[cite: 1].
+LLM correctly transforms uploaded raw documents into the requested schema fields[cite: 1].
+User can manually add, edit, or delete any specific field (skills, project, education entry) in the UI before proceeding.
+Clicking "Save Profile & Proceed" saves the state locally and unlocks the Job Description paste area on Tab 1[cite: 1].
+
+
+Follow up Prompt 2:-
+### TASK OVERVIEW
+You are an expert AI engineer building **Tab 4: Global Analysis** for the AI Job Application Assistant[cite: 1]. 
+
+Expand the global analysis component beyond basic skill gap reporting into a holistic, structured **SWOT Analysis** (Strengths, Weaknesses, Opportunities, Threats)[cite: 1]. The objective is to evaluate cross-rejection patterns, highlight competitive advantages, pinpoint areas for growth, and provide an encouraging, actionable roadmap for the candidate[cite: 1].
+
+---
+
+### FUNCTIONAL REQUIREMENTS & SYSTEM FLOW
+
+#### 1. Data Aggregation Input
+* The Global Analysis engine must read across **all rejection entries** stored in the local JSON data store[cite: 1].
+* Inputs consumed per rejection row[cite: 1]:
+  * Targeted Job Description & Required Skills[cite: 1].
+  * Initial Skill Match Score[cite: 1].
+  * User-provided Rejection Notes & Interview Feedback[cite: 1].
+  * Per-row AI Analysis & updated Candidate Profile state (`current_profile_state`)[cite: 1].
+
+#### 2. Comprehensive SWOT & Intelligence Output
+When the user visits Tab 4 or clicks **"Run Global Analysis"**, the LLM must generate a structured report organized into the following four distinct sections[cite: 1]:
+
+* **💪 Strengths (Encouragement & Validation):**
+  * Core technical and domain competencies that consistently match JDs across applications[cite: 1].
+  * High-performing interview areas, strong project highlights, or skills where the candidate routinely scores high[cite: 1].
+  * Positive reinforcement to maintain candidate motivation during the job search.
+
+* **🎯 Weaknesses (Identified Skill & Experience Gaps):**
+  * Recurring missing skills or tools identified across multiple rejections[cite: 1].
+  * Frequently missed interview topics, question types, or weak domain knowledge[cite: 1].
+  * Experience framing or structural resume gaps that require refinement[cite: 1].
+
+* **🚀 Opportunities (Strategic Growth & Positioning):**
+  * High-value tools, technologies, or concepts that—if learned—would unlock the highest percentage of targeted job roles.
+  * Strategic tweaks to project framing, resume terminology, or interview prep focus areas[cite: 1].
+  * Low-hanging fruit skills that bridge the gap to higher match percentages[cite: 1].
+
+* **⚠️ Threats (Market & Domain Alignments):**
+  * Systematic mismatches between the candidate's current experience level and targeted role seniorities[cite: 1].
+  * Emerging industry trends or required toolsets in candidate's target roles that are currently absent from their profile[cite: 1].
+
+#### 3. Strategic Summary & Action Plan
+* **Plain-Language Executive Summary:** A warm, encouraging, grounded summary paragraph synthesizing the user's overall standing[cite: 1].
+* **Top 3 Immediate Actions:** A numbered list prioritizing the exact three steps the candidate should complete before submitting their next batch of applications[cite: 1].
+
+#### 4. Dynamic Empty State Handling
+* If there are **fewer than 2 rejected applications** in Tab 3[cite: 1]:
+  * Display a clean, encouraging Empty State view: *"Insufficient rejection data to generate cross-pattern insights. Complete rejection analyses in Tab 3 to unlock your comprehensive SWOT report."*[cite: 1]
+
+---
+
+### TECHNICAL & RUBRIC REQUIREMENTS
+1. **Grounded Reasoning:** The analysis must strictly rely on aggregated rejection history and the living profile JSON state—preventing hallucinated or generic feedback[cite: 1, 2].
+2. **Encouraging & Constructive Tone:** The framing must balance candid gap identification with motivating validation of candidate strengths[cite: 1, 2].
+3. **JSON Storage Persistence:** Store the latest Global Analysis result object (including timestamp and SWOT model) directly in the local JSON file[cite: 1].
+
+---
+
+### ACCEPTANCE CRITERIA
+* Displays an informative empty state when insufficient rejection data exists[cite: 1].
+* Aggregates history across all rows in Tab 3 to produce a complete SWOT report[cite: 1].
+* Highlights both positive candidate strengths and growth areas (weaknesses) to keep the user encouraged[cite: 1].
+* Provides concrete, prioritized action steps for subsequent job applications[cite: 1].
+
+Follow up prompt 3:- 
+Typography & Color System Configuration
+CSS
+:root {
+  /* Typography & Text */
+  --color-heading-primary: #9E5868; /* Muted Berry/Rose */
+  --color-card-title: #3A4B56;       /* Dark Slate Gray */
+  --color-body-text: #6C7880;        /* Muted Slate/Cool Gray */
+
+  /* UI Components & Cards */
+  --color-card-bg: #FFFFFF;          /* Pure White */
+  --color-card-border: #E08C9D;      /* Dusty Pink */
+  --color-panel-bg: #FFFFFF;         /* White */
+  --gradient-panel-tint: linear-gradient(135deg, #FCD6D2 0%, #FAD5C0 100%); /* Soft Peach/Coral */
+
+  /* Right Side Abstract Graphic */
+  --color-graphic-grid: #E61B8A;     /* Vibrant Neon Pink */
+  --color-graphic-accent: #C4D152;   /* Lime Green/Yellow */
+  --color-graphic-dark-base: #17040F;/* Near Black/Dark Plum */
+  --color-graphic-node: #FFFFFF;     /* Bright White */
+}
+Component Styling Guidelines
+1. Text Elements
+Main Headings ("The Problem", etc.): Apply --color-heading-primary (#9E5868) to establish strong thematic focus.
+
+Card Titles ("Hours Lost...", etc.): Use --color-card-title (#3A4B56) for high readability and structured hierarchy.
+
+Body Text: Use --color-body-text (#6C7880) across all descriptive paragraphs and lists to maintain a clean, accessible contrast.
+
+2. Cards & Containers
+Background: Set container backgrounds to --color-card-bg (#FFFFFF).
+
+Borders & Shadows: Frame card outer borders or highlight accent shadows with --color-card-border (#E08C9D) to match the dusty pink visual cue.
+
+Panels: Render main left structural panels in solid white (#FFFFFF) layered over the ambient --gradient-panel-tint (#FCD6D2 to #FAD5C0).
+
+3. Abstract Graphics & Visual Nodes
+Dark Base: Anchor the right-side graphic canvas or specialized visualization blocks with --color-graphic-dark-base (#17040F).
+
+Grid Lines & Accents: Overlay structural grid lines using --color-graphic-grid (#E61B8A) and secondary data accents with --color-graphic-accent (#C4D152).
+
+Highlights & Nodes: Plot interactive graph nodes or focal highlights using solid white (#FFFFFF).
